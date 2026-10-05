@@ -40,7 +40,7 @@ aside{flex:0 1 320px;min-width:0;width:100%;display:flex;flex-direction:column;g
 .brand span{color:var(--muted);font-size:12px}
 .label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .rows{display:flex;flex-direction:column;gap:6px}
-.row{display:grid;grid-template-columns:14px 1fr auto auto;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:1px solid var(--line);border-radius:4px;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:1px solid var(--line);border-radius:4px;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
 .row:hover{border-color:var(--muted)}
 .row.off{opacity:.45}
 .row.dead .nm{text-decoration:line-through;color:var(--muted)}
@@ -58,6 +58,18 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-
 .actions .primary{flex:1}
 .help{color:var(--muted);font-size:12px;line-height:1.6;margin:0}
 .help kbd{font-size:10px}
+.prow{cursor:default}
+.prow .who,.prow .mode{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;min-width:0}
+.prow .who:focus-visible,.prow .mode:focus-visible,.kb:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.prow .mode{justify-content:flex-end}
+.kb{font:inherit;font-size:11px;min-width:26px;text-align:center;padding:3px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;color:var(--fg);background:transparent;cursor:pointer}
+.kb:hover{border-color:var(--muted)}
+.kb.wait{border-color:var(--accent);color:var(--accent);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.kb.wait{animation:none}}
+.linkbtn{all:unset;cursor:pointer;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--fg)}
+.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .target{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
 .target b{color:var(--fg);font-variant-numeric:tabular-nums}
 .toggle{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:12px}
@@ -114,8 +126,32 @@ const DEFS = [
   {name:'Sefi',   color:'#2fd6b5', keys:['KeyK','KeyL'],          lbl:['K','L']},
 ];
 const modes = ['human','off','off','bot','off','bot','off','off','off'];
-const keyOwner = {};
-DEFS.forEach((d,i)=>{ keyOwner[d.keys[0]] = [i,0]; keyOwner[d.keys[1]] = [i,1]; });
+const DEFAULT_KEYS = DEFS.map(d => d.keys.slice());
+const NAMED = {ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Comma:',',Period:'.',Slash:'/',Semicolon:';',Quote:"'",
+  BracketLeft:'[',BracketRight:']',Backslash:'\\',Minus:'-',Equal:'=',Backquote:'`',ShiftLeft:'L⇧',ShiftRight:'R⇧',
+  ControlLeft:'LCtrl',ControlRight:'RCtrl',AltLeft:'LAlt',AltRight:'RAlt',Enter:'Enter',Tab:'Tab',Backspace:'⌫',
+  MetaLeft:'LCmd',MetaRight:'RCmd',Home:'Home',End:'End',PageUp:'PgUp',PageDown:'PgDn',Insert:'Ins',Delete:'Del',
+  NumpadAdd:'Num+',NumpadSubtract:'Num-',NumpadMultiply:'Num*',NumpadDivide:'Num/',NumpadDecimal:'Num.',NumpadEnter:'NumEnt'};
+const keyLabel = c => NAMED[c] || c.replace(/^Key/,'').replace(/^Digit/,'').replace(/^Numpad/,'Num');
+let keyOwner = {};
+function rebuildKeys(){
+  keyOwner = {};
+  DEFS.forEach((d,i) => { d.lbl = d.keys.map(keyLabel); keyOwner[d.keys[0]] = [i,0]; keyOwner[d.keys[1]] = [i,1]; });
+}
+try {
+  const saved = JSON.parse(localStorage.getItem('snarl-keys') || 'null');
+  if (Array.isArray(saved) && saved.length === DEFS.length) saved.forEach((k,i) => { if (Array.isArray(k) && k.length === 2 && k.every(x => typeof x === 'string')) DEFS[i].keys = k; });
+} catch (e) {}
+rebuildKeys();
+function saveKeys(){ try { localStorage.setItem('snarl-keys', JSON.stringify(DEFS.map(d => d.keys))); } catch (e) {} }
+let rebinding = null; // {i, side}
+function bindKey(code){
+  const {i, side} = rebinding;
+  const old = DEFS[i].keys[side], other = keyOwner[code];
+  if (other && !(other[0] === i && other[1] === side)) DEFS[other[0]].keys[other[1]] = old; // swap
+  DEFS[i].keys[side] = code;
+  rebinding = null; rebuildKeys(); saveKeys(); ui();
+}
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -304,6 +340,7 @@ function startDemo(){
   resetField(demo); demoWait = 0;
 }
 function startGame(){
+  rebinding = null;
   const ids = active(); if (ids.length < 2) return;
   players = ids.map(i => mk(i, modes[i]));
   target = 10*(players.length-1); round = 0;
@@ -401,13 +438,16 @@ function ui(){
   $('phaseLbl').textContent = inLobby ? 'Lobby' : `Round ${round}`;
   if (inLobby){
     DEFS.forEach((d,i) => {
-      const b = document.createElement('button');
-      b.className = 'row' + (modes[i]==='off' ? ' off' : '');
-      b.innerHTML = `<span class="dot" style="background:${d.color}"></span><span class="nm">${d.name}</span>
-        <span class="keys"><kbd>${d.lbl[0]}</kbd><kbd>${d.lbl[1]}</kbd></span>
-        <span class="mode">${modes[i]==='human'?'Player':modes[i]==='bot'?'Bot':'Off'}</span>`;
-      b.onclick = () => { modes[i] = {off:'human',human:'bot',bot:'off'}[modes[i]]; ui(); };
-      rows.appendChild(b);
+      const r = document.createElement('div');
+      r.className = 'row prow' + (modes[i]==='off' ? ' off' : '');
+      const wait = s => rebinding && rebinding.i === i && rebinding.side === s;
+      r.innerHTML = `<button class="who" id="who${i}" aria-label="Change ${d.name}: ${modes[i]}"><span class="dot" style="background:${d.color}"></span><span class="nm">${d.name}</span></button>
+        <span class="keys">${[0,1].map(s => `<button class="kb${wait(s)?' wait':''}" id="kb${i}_${s}" aria-label="${d.name} ${s?'right':'left'} key: ${d.lbl[s]}. Click to change">${wait(s)?'…':d.lbl[s]}</button>`).join('')}</span>
+        <button class="mode" id="mode${i}">${modes[i]==='human'?'Player':modes[i]==='bot'?'Bot':'Off'}</button>`;
+      const cycle = () => { rebinding = null; modes[i] = {off:'human',human:'bot',bot:'off'}[modes[i]]; ui(); };
+      r.querySelector('.who').onclick = cycle; r.querySelector('.mode').onclick = cycle;
+      r.querySelectorAll('.kb').forEach((b,s) => b.onclick = e => { e.currentTarget.blur(); rebinding = wait(s) ? null : {i, side:s}; ui(); });
+      rows.appendChild(r);
     });
     const n = active().length;
     $('target').innerHTML = n >= 2 ? `<span>${n} in the game</span><span>First to <b>${10*(n-1)}</b></span>` : `<span>Add at least 2 players</span><span></span>`;
@@ -416,7 +456,7 @@ function ui(){
       const r = document.createElement('div');
       r.className = 'row' + (p.alive || phase==='ready' ? '' : ' dead');
       r.style.cursor = 'default';
-      r.innerHTML = `<span class="dot" style="background:${p.color}"></span><span class="nm">${p.name}${p.mode==='bot'?' <span style="color:var(--muted)">· bot</span>':''}${p.alive?p.eff.map(e=>`<span class="fxb" title="${POW[e.t].name}">${svgIcon(e.t, SCOPE[e.s], 14)}</span>`).join(''):''}</span>
+      r.innerHTML = `<span style="display:flex;align-items:center;gap:10px;min-width:0"><span class="dot" style="background:${p.color}"></span><span class="nm">${p.name}${p.mode==='bot'?' <span style="color:var(--muted)">· bot</span>':''}${p.alive?p.eff.map(e=>`<span class="fxb" title="${POW[e.t].name}">${svgIcon(e.t, SCOPE[e.s], 14)}</span>`).join(''):''}</span></span>
         <span class="keys">${p.mode==='bot'?'':`<kbd>${p.lbl[0]}</kbd><kbd>${p.lbl[1]}</kbd>`}</span>
         <span class="score">${p.score}</span>`;
       rows.appendChild(r);
@@ -425,9 +465,9 @@ function ui(){
   }
 
   const main = $('mainBtn'), msg = $('msg');
-  $('lobbyBtn').hidden = inLobby;
+  $('lobbyBtn').style.display = inLobby ? 'none' : '';
   main.disabled = inLobby && active().length < 2;
-  msg.classList.remove('clear'); msg.hidden = false;
+  msg.classList.remove('clear'); msg.style.display = 'flex';
   if (inLobby){
     main.textContent = 'Start game';
     setMsg('Snarl', 'Steer your line. Never cross a trail. Grab green orbs, dodge the traps. Last one moving scores.');
@@ -435,7 +475,7 @@ function ui(){
     main.textContent = 'Pause'; msg.classList.add('clear');
     setMsg(`Round ${round}`, 'Get ready');
   } else if (phase === 'play'){
-    main.textContent = 'Pause'; msg.hidden = true;
+    main.textContent = 'Pause'; msg.style.display = 'none';
   } else if (phase === 'paused'){
     main.textContent = 'Resume'; setMsg('Paused', 'Press Space to resume');
   } else if (phase === 'roundover'){
@@ -447,8 +487,10 @@ function ui(){
     setMsg(`${w.name} wins`, `${w.score} points after ${round} rounds. Press Space to go back to the lobby.`);
   }
   $('help').innerHTML = inLobby
-    ? 'Press a player’s left key to join or leave. Bots steer themselves. <kbd>Space</kbd> starts.'
+    ? (rebinding ? `Press the new <b>${rebinding.side ? 'right' : 'left'}</b> key for ${DEFS[rebinding.i].name}. <kbd>Esc</kbd> cancels.` : 'Click a name to switch Player / Bot / Off. Click a key to change it. <kbd>Space</kbd> starts.') + ' <button class="linkbtn" id="resetKeys">Reset keys</button>'
     : '<kbd>Space</kbd> pause / continue · <kbd>Esc</kbd> back to the lobby.';
+  const rk = $('resetKeys');
+  if (rk) rk.onclick = () => { rebinding = null; DEFS.forEach((d,i) => d.keys = DEFAULT_KEYS[i].slice()); rebuildKeys(); saveKeys(); ui(); };
 }
 function legend(){
   const g = s => KINDS.filter(k=>k[0]===s).map(k=>`<span class="chip"><span class="orb" style="color:${SCOPE[s]}">${svgIcon(k[1], SCOPE[s], 15)}</span>${POW[k[1]].name}</span>`).join('');
@@ -457,7 +499,7 @@ function legend(){
     <div class="lg-row"><strong style="color:var(--self)">Green · helps whoever grabs it</strong>${g('self')}</div>
     <div class="lg-row"><strong style="color:var(--trap)">Red · trap for everyone else</strong>${g('trap')}</div>
     <div class="lg-row"><strong style="color:var(--all)">Blue · hits the whole field</strong>${g('all')}</div>`;
-  $('legend').hidden = !powersOn;
+  $('legend').style.display = powersOn ? 'flex' : 'none';
   $('powState').textContent = powersOn ? 'On' : 'Off';
 }
 $('powBtn').onclick = () => { powersOn = !powersOn; if (!powersOn) orbs = []; legend(); $('powBtn').blur(); };
@@ -479,6 +521,12 @@ $('lobbyBtn').onclick = () => { toLobby(); $('lobbyBtn').blur(); };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
+  if (rebinding){
+    e.preventDefault();
+    if (e.code === 'Escape'){ rebinding = null; ui(); return; }
+    if (e.code === 'Space' || !e.code) return; // Space is reserved for start / pause
+    bindKey(e.code); return;
+  }
   if (e.code === 'Space'){ e.preventDefault(); if (!e.repeat) primary(); return; }
   if (e.code === 'Escape'){ if (phase !== 'lobby') toLobby(); return; }
   const k = keyOwner[e.code];
