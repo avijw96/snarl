@@ -73,6 +73,8 @@ a.game:active{transform:translateY(-2px) scale(.97);transition-duration:.15s}
 a.game:focus-visible{outline:3px solid var(--c4);outline-offset:4px}
 .thumb{aspect-ratio:16/10;max-width:100%;margin:12px 12px 0;border-radius:24px;background:linear-gradient(140deg,#fff1a8,#b8f2e6);position:relative;overflow:hidden}
 .thumb svg{display:block;width:100%;height:100%}
+.thumb img{display:block;max-width:none;transition:transform .6s var(--spring)}
+a.game:hover .thumb img{transform:translateY(-6px) rotate(-3deg)}
 .thumb svg .t{transition:stroke-dashoffset 1.1s var(--spring)}
 a.game:hover .thumb svg .t{stroke-dashoffset:-30}
 .body{display:flex;flex-direction:column;gap:10px;padding:18px 24px 24px;flex:1}
@@ -109,7 +111,7 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-s
   <section class="mast">
     <h1>Levi's <span class="w">World</span></h1>
     <p>Free games to play with your friends, right in the browser. Share one keyboard or play online with a room code. No downloads, no sign-up.</p>
-    <div class="chips"><span class="chip">1 game live</span><span class="chip">Up to 9 players</span><span class="chip">Always free</span></div>
+    <div class="chips"><span class="chip">2 games live</span><span class="chip">Up to 9 players</span><span class="chip">Always free</span></div>
   </section>
 
   <h2 class="label">Games</h2>
@@ -132,6 +134,24 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-s
         <p>Steer your line, never cross a trail, slip through the gaps. Grab power orbs and set traps. Last one moving scores.</p>
         <div class="tags"><span>1–9 players</span><span>Online</span><span>Bots</span></div>
         <span class="go">Play Snarl <b aria-hidden="true">→</b></span>
+      </div>
+    </a>
+
+    <a class="game" href="dekel/">
+      <div class="thumb" style="background:repeating-linear-gradient(-45deg,#ffd43b 0 22px,#ffc61a 22px 44px)">
+        <svg viewBox="0 0 320 200" fill="none" aria-hidden="true" style="position:absolute;inset:0">
+          <rect x="0" y="168" width="320" height="32" fill="#2a2547"/>
+          <g fill="#ffd43b"><path d="M0 168h20l-14 32H0z"/><path d="M40 168h20l-14 32H26z"/><path d="M80 168h20l-14 32H66z"/><path d="M120 168h20l-14 32h-20z"/><path d="M160 168h20l-14 32h-20z"/><path d="M200 168h20l-14 32h-20z"/><path d="M240 168h20l-14 32h-20z"/><path d="M280 168h20l-14 32h-20z"/></g>
+          <circle cx="262" cy="40" r="16" fill="#ffd43b" stroke="#2a2547" stroke-width="3"/><path d="M262 40V24A16 16 0 0 0 246 40ZM262 40v16a16 16 0 0 0 16-16Z" fill="#2a2547"/>
+        </svg>
+        <img src="dekel/card-stand.webp" alt="" style="position:absolute;left:14%;bottom:16%;height:70%;width:auto">
+        <img src="dekel/card-fly.webp" alt="" style="position:absolute;right:6%;bottom:22%;height:52%;width:auto;transform:rotate(-8deg)">
+      </div>
+      <div class="body">
+        <h2>Dekel the Dummy</h2>
+        <p>Walk, jump and stomp through 12 stages: Rehovot, Afula, Gilboa, Ariel University, the office, The Train and more. He will not react.</p>
+        <div class="tags"><span>1 player</span><span>12 stages</span><span>Platformer</span></div>
+        <span class="go">Play Dekel <b aria-hidden="true">→</b></span>
       </div>
     </a>
 
