@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Levi's Events</title>
+<meta name="description" content="Levi's Events: our calendar of plans, parties and get-togethers.">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Layout: same pill nav as Levi's World; month grid as the main panel with an "upcoming" rail beside it (stacks under on phones); add/edit in a dialog. Single bright light look. */
+:root{
+  color-scheme: light;
+  --bg:#fffaf0;
+  --ink:#24203f;
+  --soft:#5b5675;
+  --line:#efe3d0;
+  --card:#ffffff;
+  --orange:#ff7a00;
+  --blue:#1f6feb;
+  --today:#fff1de;
+  --display:"Fredoka", "Nunito", ui-rounded, system-ui, sans-serif;
+  --body:"Nunito", ui-rounded, system-ui, sans-serif;
+  --shadow:0 1px 2px rgba(36,32,63,.06), 0 14px 34px -16px rgba(36,32,63,.35);
+  --spring:linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%, 1.067, 1.099 24.3%, 1.108 26%, 1.100, 1.082 30.6%, 1.026 38.7%, 0.996 46.6%, 0.991 50.2%, 1.001 66.2%, 1);
+}
+@supports not (transition-timing-function: linear(0, 1)){ :root{ --spring:cubic-bezier(.34,1.56,.64,1) } }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);background-image:radial-gradient(rgba(36,32,63,.07) 1.2px, transparent 1.3px);background-size:22px 22px;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:16px 40px}
+a{color:inherit}
+button{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+
+nav{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 12px);z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 10px;border-radius:999px;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:var(--shadow)}
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:700;font-size:20px;padding-right:6px}
+.brand i{width:30px;height:30px;border-radius:50%;background:var(--orange);box-shadow:inset -7px -7px 0 var(--blue);display:block}
+.links{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.links a{font-weight:800;font-size:14px;text-decoration:none;padding:8px 14px;border-radius:999px}
+.links a:hover{background:#fff1de}
+.links a[aria-current="page"]{background:var(--ink);color:#fff}
+.links a:focus-visible,.brand:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.brand,.links a{white-space:nowrap}
+.links{flex-wrap:nowrap}
+@media (max-width:440px){nav{padding:6px 6px 6px 8px}.brand{font-size:17px;gap:8px}.brand i{width:26px;height:26px}.links{gap:2px}.links a{padding:8px 10px;font-size:13px}}
+
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:12px}
+.top h1{font-family:var(--display);font-weight:700;font-size:clamp(44px,7vw,76px);line-height:.95;margin:0}
+.top h1 span{color:var(--orange)}
+.top p{margin:10px 0 0;color:var(--soft);font-weight:700;max-width:46ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;text-decoration:none;padding:12px 20px;border-radius:999px;border:0;cursor:pointer;transition:transform .5s var(--spring)}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:scale(.96);transition-duration:.12s}
+.btn:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.btn.primary{background:var(--blue);color:#fff;box-shadow:0 10px 24px -10px rgba(31,111,235,.7)}
+.btn.ghost{background:var(--card);box-shadow:var(--shadow)}
+.btn.danger{background:#fde8e6;color:#b4271d}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+@media (max-width:960px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--card);border-radius:28px;box-shadow:var(--shadow);padding:18px;min-width:0}
+
+.monthbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.monthbar h2{font-family:var(--display);font-weight:700;font-size:28px;margin:0;min-width:0}
+.nav-btns{display:flex;gap:6px}
+.icon{width:42px;height:42px;border-radius:50%;border:0;background:var(--bg);cursor:pointer;font-weight:800;font-size:18px;display:grid;place-items:center;transition:transform .4s var(--spring)}
+.icon:hover{transform:scale(1.08)}
+.icon:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.pill{border:0;background:var(--bg);border-radius:999px;padding:0 16px;height:42px;font-weight:800;font-size:14px;cursor:pointer}
+.pill:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow{font-size:12px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;text-align:center;padding:4px 0}
+.day{position:relative;min-height:104px;border-radius:16px;background:#fffcf6;border:2px solid transparent;padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;text-align:left;min-width:0;transition:border-color .15s, transform .4s var(--spring)}
+.day:hover{border-color:#ffd8a8}
+.day:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+.day.out{background:transparent;opacity:.45}
+.day.today{background:var(--today)}
+.day .n{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;width:28px;height:28px;display:grid;place-items:center;border-radius:50%}
+.day.today .n{background:var(--orange);color:#fff}
+.ev{display:block;width:100%;font-size:12px;font-weight:800;line-height:1.25;padding:3px 7px;border-radius:8px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;text-align:left;cursor:pointer}
+.ev:focus-visible{outline:2px solid var(--ink)}
+.more{font-size:11px;font-weight:800;color:var(--soft);padding-left:4px}
+@media (max-width:640px){
+  .grid{gap:3px}
+  .day{min-height:58px;padding:4px;border-radius:10px;align-items:center}
+  .day .n{width:24px;height:24px;font-size:13px}
+  .day .ev,.day .more{display:none}
+  .day .dots{display:flex}
+}
+.dots{display:none;gap:3px;flex-wrap:wrap;justify-content:center}
+.dots i{width:6px;height:6px;border-radius:50%;display:block}
+
+.side h3{font-family:var(--display);font-weight:700;font-size:22px;margin:0 0 10px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:center;padding:10px;border-radius:18px;background:#fffcf6;border:0;text-align:left;cursor:pointer;width:100%;transition:transform .4s var(--spring)}
+.item:hover{transform:translateX(3px)}
+.item:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+.date{border-radius:14px;padding:6px 0;text-align:center;line-height:1.05}
+.date b{display:block;font-family:var(--display);font-size:22px}
+.date small{font-size:11px;font-weight:800;text-transform:uppercase}
+.item strong{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item span{display:block;font-size:13px;color:var(--soft);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--soft);font-weight:700;font-size:14px;margin:0;padding:10px 4px}
+.note{margin:14px 0 0;font-size:12.5px;color:var(--soft);font-weight:700;line-height:1.5}
+
+/* dialog */
+dialog{border:0;border-radius:28px;padding:0;width:min(480px, calc(100vw - 32px));box-shadow:0 30px 70px -20px rgba(36,32,63,.5);color:var(--ink)}
+dialog::backdrop{background:rgba(36,32,63,.45)}
+dialog[open]{animation:pop .45s var(--spring)}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+form{display:flex;flex-direction:column;gap:14px;padding:22px}
+form h2{font-family:var(--display);font-weight:700;font-size:26px;margin:0}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:800;color:var(--soft)}
+.field input,.field textarea{font:inherit;font-weight:700;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:10px 12px;width:100%;min-width:0}
+.field textarea{min-height:70px;resize:vertical}
+.field input:focus-visible,.field textarea:focus-visible{outline:none;border-color:var(--blue)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.colors label{position:relative;cursor:pointer}
+.colors input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.colors span{display:block;width:34px;height:34px;border-radius:50%;border:3px solid transparent;transition:transform .35s var(--spring)}
+.colors input:checked + span{border-color:var(--ink);transform:scale(1.1)}
+.colors input:focus-visible + span{outline:3px solid var(--blue);outline-offset:2px}
+.actions{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:4px}
+.actions div{display:flex;gap:10px;margin-left:auto}
+.err{color:#b4271d;font-weight:800;font-size:13px;margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + 24px);transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;font-weight:800;padding:12px 20px;border-radius:999px;transition:transform .5s var(--spring), visibility 0s .5s;z-index:20;visibility:hidden}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible;transition-delay:0s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav aria-label="Main">
+    <a class="brand" href="../"><i aria-hidden="true"></i>Levi's World</a>
+    <div class="links">
+      <a href="../#games">Games</a>
+      <a href="./" aria-current="page">Levi's Events</a>
+    </div>
+  </nav>
+
+  <div class="top">
+    <div>
+      <h1>Levi's <span>Events</span></h1>
+      <p>Our calendar for plans, parties and get-togethers. Tap a day to add an event.</p>
+    </div>
+    <button class="btn primary" id="addBtn" type="button">+ Add event</button>
+  </div>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="monthTitle">
+      <div class="monthbar">
+        <h2 id="monthTitle" aria-live="polite"></h2>
+        <div class="nav-btns">
+          <button class="icon" id="prevBtn" type="button" aria-label="Previous month">‹</button>
+          <button class="pill" id="todayBtn" type="button">Today</button>
+          <button class="icon" id="nextBtn" type="button" aria-label="Next month">›</button>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <aside class="panel side" aria-labelledby="upTitle">
+      <h3 id="upTitle">Coming up</h3>
+      <div class="list" id="upcoming"></div>
+      <p class="note">Events are saved in this browser for now. A shared online calendar with reminders is coming later.</p>
+    </aside>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form id="form" method="dialog" novalidate>
+    <h2 id="dlgTitle">New event</h2>
+    <div class="field"><label for="fTitle">What</label><input id="fTitle" maxlength="80" placeholder="e.g. Dinner at The Train" autocomplete="off" required></div>
+    <div class="two">
+      <div class="field"><label for="fDate">Date</label><input id="fDate" type="date" required></div>
+      <div class="field"><label for="fTime">Time (optional)</label><input id="fTime" type="time"></div>
+    </div>
+    <div class="field"><label for="fPlace">Where (optional)</label><input id="fPlace" maxlength="80" placeholder="e.g. Rehovot" autocomplete="off"></div>
+    <div class="field"><label for="fNotes">Notes (optional)</label><textarea id="fNotes" maxlength="400" placeholder="Who's coming, what to bring…"></textarea></div>
+    <div class="field"><span style="font-size:13px;font-weight:800;color:var(--soft)" id="colLbl">Color</span><div class="colors" id="colors" role="radiogroup" aria-labelledby="colLbl"></div></div>
+    <p class="err" id="err" hidden></p>
+    <div class="actions">
+      <button class="btn danger" id="delBtn" type="button" hidden>Delete</button>
+      <div>
+        <button class="btn ghost" id="cancelBtn" type="button">Cancel</button>
+        <button class="btn primary" id="saveBtn" type="submit">Save</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+/* ---------- storage ----------
+   Every read and write goes through `store`. To move to a shared server
+   (or the reminders AI) later, swap these three functions for API calls. */
+const KEY = 'levis-events-v1';
+const store = {
+  load(){ try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } },
+  save(list){ try { localStorage.setItem(KEY, JSON.stringify(list)); return true; } catch (e) { return false; } },
+};
+
+const COLORS = [
+  {id:'orange', bg:'#ffd8a8', dot:'#ff7a00'},
+  {id:'blue',   bg:'#cfe2ff', dot:'#1f6feb'},
+  {id:'green',  bg:'#c9f0dd', dot:'#12a594'},
+  {id:'yellow', bg:'#fff0a8', dot:'#e0a800'},
+  {id:'red',    bg:'#ffd1cc', dot:'#e8453c'},
+  {id:'grey',   bg:'#e6e3ee', dot:'#5b5675'},
+];
+const colorOf = id => COLORS.find(c => c.id === id) || COLORS[0];
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return new Date(2000, 0, 1, h, m).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); };
+const sortEv = (a, b) => a.date.localeCompare(b.date) || (a.time || '99').localeCompare(b.time || '99') || a.title.localeCompare(b.title);
+
+let events = store.load();
+const today = new Date(); today.setHours(0, 0, 0, 0);
+let view = new Date(today.getFullYear(), today.getMonth(), 1);
+let editing = null;
+
+/* first-visit examples, clearly marked, so the calendar isn't empty */
+if (!events.length && (() => { try { return !localStorage.getItem(KEY + '-seen'); } catch (e) { return false; } })()){
+  const d = n => { const x = new Date(today); x.setDate(x.getDate() + n); return iso(x); };
+  events = [
+    {id:'ex1', title:'Example: Dinner at The Train', date:d(3), time:'20:30', place:'The Train', notes:'This is an example. Tap it to edit or delete.', color:'orange'},
+    {id:'ex2', title:'Example: Beach day', date:d(9), time:'', place:'Beach', notes:'', color:'blue'},
+  ];
+  store.save(events);
+  try { localStorage.setItem(KEY + '-seen', '1'); } catch (e) {}
+}
+
+/* ---------- month grid ---------- */
+const DOW = Array.from({length:7}, (_, i) => new Date(2023, 0, 1 + i).toLocaleDateString([], {weekday:'short'}));
+function render(){
+  $('monthTitle').textContent = view.toLocaleDateString([], {month:'long', year:'numeric'});
+  const g = $('grid'); g.innerHTML = '';
+  DOW.forEach(d => { const el = document.createElement('div'); el.className = 'dow'; el.textContent = d; g.appendChild(el); });
+  const start = new Date(view); start.setDate(1 - view.getDay());
+  const byDay = {};
+  for (const e of [...events].sort(sortEv)) (byDay[e.date] = byDay[e.date] || []).push(e);
+  for (let i = 0; i < 42; i++){
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    if (i >= 35 && d.getMonth() !== view.getMonth()) break;
+    const key = iso(d), list = byDay[key] || [];
+    const cell = document.createElement('div');
+    cell.className = 'day' + (d.getMonth() !== view.getMonth() ? ' out' : '') + (d.getTime() === today.getTime() ? ' today' : '');
+    cell.tabIndex = 0; cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', d.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + (list.length ? `, ${list.length} event${list.length > 1 ? 's' : ''}` : '') + '. Add event');
+    cell.innerHTML = `<span class="n">${d.getDate()}</span>`;
+    list.slice(0, 3).forEach(e => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ev';
+      b.style.background = colorOf(e.color).bg;
+      b.textContent = (e.time ? fmtTime(e.time) + ' ' : '') + e.title;
+      b.onclick = ev => { ev.stopPropagation(); openEdit(e); };
+      cell.appendChild(b);
+    });
+    if (list.length > 3){ const m = document.createElement('span'); m.className = 'more'; m.textContent = `+${list.length - 3} more`; cell.appendChild(m); }
+    if (list.length){ const dots = document.createElement('span'); dots.className = 'dots'; dots.innerHTML = list.slice(0, 4).map(e => `<i style="background:${colorOf(e.color).dot}"></i>`).join(''); cell.appendChild(dots); }
+    const add = () => { if (list.length && window.matchMedia('(max-width:640px)').matches) openEdit(list[0]); else openNew(key); };
+    cell.onclick = add;
+    cell.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); add(); } };
+    g.appendChild(cell);
+  }
+  renderUpcoming();
+}
+function renderUpcoming(){
+  const box = $('upcoming'); box.innerHTML = '';
+  const up = events.filter(e => parse(e.date) >= today).sort(sortEv).slice(0, 8);
+  if (!up.length){ box.innerHTML = '<p class="empty">Nothing planned yet. Tap “Add event” to start.</p>'; return; }
+  up.forEach(e => {
+    const d = parse(e.date), c = colorOf(e.color);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'item';
+    b.innerHTML = `<span class="date" style="background:${c.bg}"><b>${d.getDate()}</b><small>${esc(d.toLocaleDateString([], {month:'short'}))}</small></span>
+      <span><strong>${esc(e.title)}</strong><span>${esc([d.toLocaleDateString([], {weekday:'short'}), fmtTime(e.time), e.place].filter(Boolean).join(' · '))}</span></span>`;
+    b.onclick = () => openEdit(e);
+    box.appendChild(b);
+  });
+}
+
+/* ---------- dialog ---------- */
+COLORS.forEach((c, i) => {
+  const l = document.createElement('label');
+  l.innerHTML = `<input type="radio" name="color" value="${c.id}" id="col-${c.id}" aria-label="${c.id}"${i === 0 ? ' checked' : ''}><span style="background:${c.dot}"></span>`;
+  $('colors').appendChild(l);
+});
+const dlg = $('dlg');
+function fill(e){
+  $('fTitle').value = e.title || ''; $('fDate').value = e.date || iso(today); $('fTime').value = e.time || '';
+  $('fPlace').value = e.place || ''; $('fNotes').value = e.notes || '';
+  ($('col-' + (e.color || 'orange')) || $('col-orange')).checked = true;
+  $('err').hidden = true;
+}
+function openNew(date){ editing = null; $('dlgTitle').textContent = 'New event'; $('delBtn').hidden = true; fill({date}); showDlg(); }
+function openEdit(e){ editing = e.id; $('dlgTitle').textContent = 'Edit event'; $('delBtn').hidden = false; fill(e); showDlg(); }
+function showDlg(){ if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); setTimeout(() => $('fTitle').focus(), 30); }
+function closeDlg(){ if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+$('cancelBtn').onclick = closeDlg;
+$('form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const title = $('fTitle').value.trim(), date = $('fDate').value;
+  if (!title){ $('err').textContent = 'Give the event a name.'; $('err').hidden = false; $('fTitle').focus(); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ $('err').textContent = 'Pick a date.'; $('err').hidden = false; $('fDate').focus(); return; }
+  const data = {title, date, time:$('fTime').value, place:$('fPlace').value.trim(), notes:$('fNotes').value.trim(), color:(document.querySelector('input[name=color]:checked') || {}).value || 'orange'};
+  if (editing){ const i = events.findIndex(e => e.id === editing); if (i >= 0) events[i] = {...events[i], ...data}; }
+  else events.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ...data});
+  const ok = store.save(events);
+  closeDlg();
+  const d = parse(date); view = new Date(d.getFullYear(), d.getMonth(), 1);
+  render(); toast(ok ? (editing ? 'Event updated' : 'Event added') : 'Saved for this visit only. This browser blocks storage.');
+});
+let delArmed = false;
+$('delBtn').onclick = () => {
+  if (!delArmed){ delArmed = true; $('delBtn').textContent = 'Tap again to delete'; setTimeout(() => { delArmed = false; $('delBtn').textContent = 'Delete'; }, 2500); return; }
+  delArmed = false; $('delBtn').textContent = 'Delete';
+  events = events.filter(e => e.id !== editing); store.save(events); closeDlg(); render(); toast('Event deleted');
+};
+dlg.addEventListener('close', () => { delArmed = false; $('delBtn').textContent = 'Delete'; });
+
+let tt;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2200); }
+
+$('addBtn').onclick = () => openNew(iso(view.getMonth() === today.getMonth() && view.getFullYear() === today.getFullYear() ? today : view));
+$('prevBtn').onclick = () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); };
+$('nextBtn').onclick = () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); };
+$('todayBtn').onclick = () => { view = new Date(today.getFullYear(), today.getMonth(), 1); render(); };
+render();
+})();
+</script>
+</body>
+</html>
